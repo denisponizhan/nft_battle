@@ -88,30 +88,42 @@ contract FruitFightersArena is FruitFightersFactory {
         if (!isTraitsReversed) {
             if (winner == 1) {
                 f1.winCount++;
-                pendingVictoryRewards[fruitFighterToOwner[_tokenId]] += reward;
-                emit NewWinner(_tokenId, fruitFighterToOwner[_tokenId], reward);
+                pendingVictoryRewards[_fruitFighterToOwner[_tokenId]] += reward;
+                emit NewWinner(
+                    _tokenId,
+                    _fruitFighterToOwner[_tokenId],
+                    reward
+                );
             } else {
                 f2.winCount++;
-                pendingVictoryRewards[fruitFighterToOwner[_targetId]] += reward;
+                pendingVictoryRewards[
+                    _fruitFighterToOwner[_targetId]
+                ] += reward;
                 emit NewWinner(
                     _targetId,
-                    fruitFighterToOwner[_targetId],
+                    _fruitFighterToOwner[_targetId],
                     reward
                 );
             }
         } else {
             if (winner == 1) {
                 f2.winCount++;
-                pendingVictoryRewards[fruitFighterToOwner[_targetId]] += reward;
+                pendingVictoryRewards[
+                    _fruitFighterToOwner[_targetId]
+                ] += reward;
                 emit NewWinner(
                     _targetId,
-                    fruitFighterToOwner[_targetId],
+                    _fruitFighterToOwner[_targetId],
                     reward
                 );
             } else {
                 f1.winCount++;
-                pendingVictoryRewards[fruitFighterToOwner[_tokenId]] += reward;
-                emit NewWinner(_tokenId, fruitFighterToOwner[_tokenId], reward);
+                pendingVictoryRewards[_fruitFighterToOwner[_tokenId]] += reward;
+                emit NewWinner(
+                    _tokenId,
+                    _fruitFighterToOwner[_tokenId],
+                    reward
+                );
             }
         }
 
@@ -120,11 +132,11 @@ contract FruitFightersArena is FruitFightersFactory {
     }
 
     function withdraw() public returns (bool) {
-        uint256 amount = pendingVictoryRewards[msg.sender];
+        uint256 amount = pendingVictoryRewards[_msgSender()];
         if (amount > 0) {
-            pendingVictoryRewards[msg.sender] = 0;
-            if (!payable(msg.sender).send(amount)) {
-                pendingVictoryRewards[msg.sender] = amount;
+            pendingVictoryRewards[_msgSender()] = 0;
+            if (!payable(_msgSender()).send(amount)) {
+                pendingVictoryRewards[_msgSender()] = amount;
                 return false;
             }
         }

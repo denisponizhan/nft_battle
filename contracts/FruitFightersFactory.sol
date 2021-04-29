@@ -22,9 +22,14 @@ contract FruitFightersFactory is Ownable {
 
     FruitFighter[] public fruitFighters;
 
-    mapping(uint256 => address) public fruitFighterToOwner;
-    mapping(address => uint256) public ownerFruitFighterCount;
-    mapping(bytes32 => bool) public usedNames;
+    // Mapping from token ID to owner address
+    mapping(uint256 => address) internal _fruitFighterToOwner;
+
+    // Mapping owner address to token count
+    mapping(address => uint256) internal _ownerFruitFighterCount;
+
+    // Mapping keccak256(abi.encodePacked(_name)) to true or false. FruitFightersFactory allows only unique name per token
+    mapping(bytes32 => bool) private _usedNames;
 
     event NewFruitFighter(
         uint256 indexed id,
@@ -39,14 +44,14 @@ contract FruitFightersFactory is Ownable {
 
     modifier onlyOwnerOf(uint256 _tokenId) {
         require(
-            msg.sender == fruitFighterToOwner[_tokenId],
+            _msgSender() == _fruitFighterToOwner[_tokenId],
             "Surry, but you are not an owner of this token."
         );
         _;
     }
 
     function isNameFree(string memory _name) public view returns (bool) {
-        return !usedNames[keccak256(abi.encodePacked(_name))];
+        return !_usedNames[keccak256(abi.encodePacked(_name))];
     }
 
     function changeName(uint256 _tokenId, string memory _name)
@@ -57,9 +62,9 @@ contract FruitFightersFactory is Ownable {
         require(msg.value == newNameFee, "Please supply new name fee.");
         require(isNameFree(_name), "This name already in used.");
         ownerFee += msg.value;
-        usedNames[keccak256(abi.encodePacked(_name))] = true;
+        _usedNames[keccak256(abi.encodePacked(_name))] = true;
         FruitFighter storage fighter = fruitFighters[_tokenId];
-        usedNames[keccak256(abi.encodePacked(fighter.name))] = false;
+        _usedNames[keccak256(abi.encodePacked(fighter.name))] = false;
         fighter.name = _name;
         emit NewFruitFighterName(_tokenId, fighter.name);
     }
@@ -75,10 +80,12 @@ contract FruitFightersFactory is Ownable {
         return
             uint256(
                 keccak256(
-                    abi.encodePacked(block.timestamp, msg.sender, randNonce)
+                    abi.encodePacked(block.timestamp, _msgSender(), randNonce)
                 )
             ) % _modulus;
     }
+
+    //=================
 
     function getFighterFeatures(uint256 _supplyFee)
         private
@@ -111,7 +118,7 @@ contract FruitFightersFactory is Ownable {
                     ) % 90) + 110 // from 110 to 199
                 ),
                 uint8(
-                    (uint256(keccak256(abi.encodePacked(rand, msg.sender))) %
+                    (uint256(keccak256(abi.encodePacked(rand, _msgSender()))) %
                         90) + 110 // from 110 to 199
                 ),
                 uint8(
@@ -127,7 +134,7 @@ contract FruitFightersFactory is Ownable {
                     ) % 70) + 50 // from 50 to 119
                 ),
                 uint8(
-                    (uint256(keccak256(abi.encodePacked(rand, msg.sender))) %
+                    (uint256(keccak256(abi.encodePacked(rand, _msgSender()))) %
                         70) + 50 // from 50 to 119
                 ),
                 uint8((uint256(keccak256(abi.encodePacked(rand, k))) % 70) + 50) // from 50 to 119
@@ -141,7 +148,7 @@ contract FruitFightersFactory is Ownable {
                     ) % 50) + 10 // from 10 to 59
                 ),
                 uint8(
-                    (uint256(keccak256(abi.encodePacked(rand, msg.sender))) %
+                    (uint256(keccak256(abi.encodePacked(rand, _msgSender()))) %
                         50) + 10 // from 10 to 59
                 ),
                 uint8((uint256(keccak256(abi.encodePacked(rand, k))) % 50) + 10) // from 10 to 59
@@ -149,12 +156,10 @@ contract FruitFightersFactory is Ownable {
         }
     }
 
-    //=================
-
     function _createFruitFighter(string memory _name, uint256 _supplyFee)
         private
     {
-        usedNames[keccak256(abi.encodePacked(_name))] = true;
+        _usedNames[keccak256(abi.encodePacked(_name))] = true;
 
         (TokenTypes tokenType, uint8 power, uint8 endurance, uint8 speed) =
             getFighterFeatures(_supplyFee);
@@ -165,8 +170,8 @@ contract FruitFightersFactory is Ownable {
 
         uint256 id = fruitFighters.length - 1;
 
-        fruitFighterToOwner[id] = msg.sender;
-        ownerFruitFighterCount[msg.sender]++;
+        _fruitFighterToOwner[id] = _msgSender();
+        _ownerFruitFighterCount[_msgSender()]++;
 
         emit NewFruitFighter(id, tokenType, _name, power, endurance, speed);
     }
@@ -190,7 +195,7 @@ contract FruitFightersFactory is Ownable {
 
     function createExclusiveFruitFighter(string memory _name) public onlyOwner {
         require(isNameFree(_name), "This name already in used.");
-        usedNames[keccak256(abi.encodePacked(_name))] = true;
+        _usedNames[keccak256(abi.encodePacked(_name))] = true;
 
         uint8 power =
             uint8(
@@ -224,8 +229,8 @@ contract FruitFightersFactory is Ownable {
 
         uint256 id = fruitFighters.length - 1;
 
-        fruitFighterToOwner[id] = msg.sender;
-        ownerFruitFighterCount[msg.sender]++;
+        _fruitFighterToOwner[id] = _msgSender();
+        _ownerFruitFighterCount[_msgSender()]++;
 
         emit NewFruitFighter(
             id,
