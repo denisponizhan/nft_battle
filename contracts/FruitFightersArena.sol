@@ -1,10 +1,10 @@
 pragma solidity ^0.8.4;
 
-import "./FruitFightersFactory.sol";
+import "./FruitFightersCore.sol";
 
-contract FruitFightersArena is FruitFightersFactory {
-    uint256 minBid = 5000000000000000; // 0.005 eth
-    uint256 figthFee = 1000000000000000; // 0.001 eth
+contract FruitFightersArena is FruitFightersCore {
+    uint256 public minBid = 5000000000000000; // 0.005 eth
+    uint256 public figthFee = 1000000000000000; // 0.001 eth
 
     mapping(uint256 => bool) public inArena;
     mapping(uint256 => uint256) public stackes;
@@ -16,41 +16,21 @@ contract FruitFightersArena is FruitFightersFactory {
         uint256 indexed victoryReward
     );
 
-    function enterArena(uint256 _tokenId)
-        external
-        payable
-        onlyOwnerOf(_tokenId)
-    {
-        require(!inArena[_tokenId], "Fighter already here.");
-        require(
-            msg.value >= minBid,
-            "Sorry, but you sent less than the minimum fighting bid."
-        );
+    function _enterArena(uint256 _tokenId) internal {
         stackes[_tokenId] = msg.value;
         inArena[_tokenId] = true;
     }
 
-    function fight(uint256 _tokenId, uint256 _targetId)
-        external
-        payable
-        onlyOwnerOf(_tokenId)
-    {
-        require(_tokenId != _targetId, "Sorry, but you can't beat yourself.");
-        require(inArena[_targetId], "Target fighter is not in arena.");
-        require(
-            msg.value == stackes[_targetId],
-            "Please provide an equal fighting bid."
-        );
-
+    function _fight(uint256 _tokenId, uint256 _targetId) internal {
         uint256 rand = _randByMod(100000);
         uint256 reward = stackes[_targetId] + msg.value - figthFee;
 
-        ownerFee += figthFee;
+        _ownerWithdrawal += figthFee;
         stackes[_targetId] = 0;
         inArena[_targetId] = false;
 
-        FruitFighter storage f1 = fruitFighters[_tokenId];
-        FruitFighter storage f2 = fruitFighters[_targetId];
+        FruitFighter storage f1 = _fruitFighters[_tokenId];
+        FruitFighter storage f2 = _fruitFighters[_targetId];
 
         uint16[2] memory traits;
         bool isTraitsReversed = false;
@@ -129,32 +109,5 @@ contract FruitFightersArena is FruitFightersFactory {
 
         f1.fightCount++;
         f2.fightCount++;
-    }
-
-    function withdraw() public returns (bool) {
-        uint256 amount = pendingVictoryRewards[_msgSender()];
-        if (amount > 0) {
-            pendingVictoryRewards[_msgSender()] = 0;
-            if (!payable(_msgSender()).send(amount)) {
-                pendingVictoryRewards[_msgSender()] = amount;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function ownerWithdraw(uint256 _amount) public onlyOwner returns (bool) {
-        if (_amount > 0) {
-            ownerFee -= _amount;
-            if (!payable(owner()).send(_amount)) {
-                ownerFee += _amount;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function getOwnerFee() public view onlyOwner returns (uint256) {
-        return ownerFee;
     }
 }

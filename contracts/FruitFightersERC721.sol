@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 import "./FruitFightersArena.sol";
 
-contract FruitFighterERC721 is
+contract FruitFightersERC721 is
     FruitFightersArena,
     ERC165,
     IERC721,
@@ -149,7 +149,7 @@ contract FruitFighterERC721 is
      * @dev See {IERC721-approve}.
      */
     function approve(address to, uint256 tokenId) public virtual override {
-        address owner = FruitFighterERC721.ownerOf(tokenId);
+        address owner = FruitFightersERC721.ownerOf(tokenId);
         require(to != owner, "ERC721: approval to current owner");
 
         require(
@@ -307,7 +307,7 @@ contract FruitFighterERC721 is
             _exists(tokenId),
             "ERC721: operator query for nonexistent token"
         );
-        address owner = FruitFighterERC721.ownerOf(tokenId);
+        address owner = FruitFightersERC721.ownerOf(tokenId);
         return (spender == owner ||
             getApproved(tokenId) == spender ||
             isApprovedForAll(owner, spender));
@@ -330,7 +330,7 @@ contract FruitFighterERC721 is
         uint256 tokenId
     ) internal virtual {
         require(
-            FruitFighterERC721.ownerOf(tokenId) == from,
+            FruitFightersERC721.ownerOf(tokenId) == from,
             "ERC721: transfer of token that is not own"
         );
         require(to != address(0), "ERC721: transfer to the zero address");
@@ -354,7 +354,7 @@ contract FruitFighterERC721 is
      */
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovals[tokenId] = to;
-        emit Approval(FruitFighterERC721.ownerOf(tokenId), to, tokenId);
+        emit Approval(FruitFightersERC721.ownerOf(tokenId), to, tokenId);
     }
 
     /**
